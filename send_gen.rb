@@ -1,5 +1,5 @@
-# Generate a SendGrid cURL or JSON payload based on user input
-# run "ruby send_gen.rb" and follow in consol prompts
+# Generate a SendGrid cURL, JSON payload, or Send a SG message based on user input
+# run "ruby send_gen.rb" and follow in console prompts
 ############
 require 'httparty'
 require 'json'
