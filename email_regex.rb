@@ -1,8 +1,9 @@
-# valid email regex
-#\b[a-zA-Z0-9!#$%&'*+-\/=?^_`.{|}~]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b
+# Email validator, takes a single input CSV and writes a CSV valid_emails.csv
 # ruby email_regex.rb filename.csv
 # 
 # file MUST be a proper CSV format, with a single first column, with "email" as only header row.
+#########
+# valid email regex is: \b[a-zA-Z0-9!#$%&'*+-\/=?^_`.{|}~]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b
 
 
 require 'csv'
