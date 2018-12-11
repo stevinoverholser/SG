@@ -67,3 +67,4 @@ puts "#{bad_count} total invalid address removed, new CSV size: #{size}"
 email_array.insert(0,"email")
 #puts email_array.inspect
 csv_write("valid_emails.csv", email_array.flatten, "email")
+puts "Valid emails written to 'valid_emails.csv'"
