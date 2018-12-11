@@ -1,5 +1,5 @@
 # valid email regex
-#\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b
+#\b[a-zA-Z0-9!#$%&'*+-\/=?^_`.{|}~]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b
 # ruby email_regex.rb filename.csv
 # 
 # file MUST be a proper CSV format, with a single first column, with "email" as only header row.
@@ -31,21 +31,33 @@ size = sizea - sizeb
 puts "#{size} nil values removed"
 # remove duplicate email
 sizea = email_array.length
+#lowercase all emails
+j=0
+while (j<sizea-1) do
+	#puts "#{email_array[j]}"
+	email_array[j] = email_array[j].downcase
+	#puts "#{email_array[j]}"
+	j=j+1
+end
 puts "Removing duplicates"
 email_array = email_array.uniq
 sizeb = email_array.length
 size = sizea - sizeb 
 puts "#{size} duplicate emails removed"
-
+size = email_array.length
+#puts size
 i=0
 bad_count = 0
-while (i<size-1) do
+while (i<size) do
 	#puts email_array[i]
-	if !(/\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/ =~ email_array[i])
+	if !(/\b[a-zA-Z0-9!#$%&'*+-\/=?^_`.{|}~]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/ =~ email_array[i])
 		puts "removing bad address: #{email_array[i].inspect}"
-		email_array.delete_at(i) 
+		email_array.delete_at(i)
 		bad_count = bad_count + 1
+		i=i-1 #delete_at() alters size of array and shifts indexing. account for this here
+		size=size-1
 	end
+	#puts i
 	i=i+1
 end
 
