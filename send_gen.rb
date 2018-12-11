@@ -1,7 +1,6 @@
 # Generate a SendGrid cURL or JSON payload based on user input
 # run "ruby send_gen.rb" and follow in consol prompts
 ############
-# challenge = make it so users can
 require 'httparty'
 require 'json'
 
@@ -60,7 +59,7 @@ if (/\S*@\S*[.]\S*/ =~ to) ##use a function to validate the address format, so t
         to_p = "{\"email\": \"#{to}\"}"
         to = "nil"
     else
-      to_p = "{\"email\": \"#{to}\"} , " + to_p ##another way to do this is to add the `, ` all the way through, then just drop the last 2 chars once you're done building the string.
+      to_p = "{\"email\": \"#{to}\"} , " + to_p 
       to = "nil"
     end
   end
