@@ -1,6 +1,9 @@
 # Generate a SendGrid cURL or JSON payload based on user input
 # run "ruby send_gen.rb" and follow in consol prompts
 ############
+# challenge = make it so users can
+require 'httparty'
+require 'json'
 
 # methods for adding to users clipboard
 def pbcopy(input)
@@ -95,7 +98,11 @@ subject = "defult"
 puts "Enter Subject line: " 
 subject = gets.chomp
 puts "Subject: #{subject}"
-
+subject = subject.gsub(/\"/, "\\\"")
+puts subject
+puts "Enter plain text body content: " 
+content = gets.chomp
+content = content.gsub(/\"/, "\\\"")
 puts "Type 'now' to send now or enter EPOCH timestamp: " 
 send_at = gets.chomp
 send_at_i = send_at.to_i
@@ -118,19 +125,19 @@ while (send_at != "now" && (send_at_i < Time.now.to_i || send_at_i >= (Time.now.
 end
 if (send_at == "now")
   #Build Payload
-  payload = "{\"personalizations\": [{\"to\": [#{to_p} ] } ], \"from\": {\"email\": \"#{from}\"}, \"subject\": \"#{subject}\", \"content\": [{\"type\": \"text/plain\", \"value\": \"Hello, World!\"} ] }"
+  payload = "{\"personalizations\": [{\"to\": [#{to_p} ] } ], \"from\": {\"email\": \"#{from}\"}, \"subject\": \"#{subject}\", \"content\": [{\"type\": \"text/plain\", \"value\": \"#{content}\"} ] }"
   #puts "Here is you v3 payload (already copied to your clipboard): "
   # print payload an load to clipboard
 else
   #Build Payload
-  payload = "{\"personalizations\": [{\"to\": [#{to_p} ] } ], \"from\": {\"email\": \"#{from}\"}, \"subject\": \"#{subject}\", \"content\": [{\"type\": \"text/plain\", \"value\": \"Hello, World!\"} ], \"send_at\": \"#{send_at}\" }"
+  payload = "{\"personalizations\": [{\"to\": [#{to_p} ] } ], \"from\": {\"email\": \"#{from}\"}, \"subject\": \"#{subject}\", \"content\": [{\"type\": \"text/plain\", \"value\": \"#{content}\"} ], \"send_at\": \"#{send_at}\" }"
   #puts "Here is you v3 payload (already copied to your clipboard): "
   # print payload an load to clipboard
 end
 
-puts "Generate a JSON payload of a full cURL call? Please input 'json' or 'curl': "
+puts "Generate a JSON payload, a full cURL call, or send message? Please input 'json', 'curl' or 'send' respectivly: "
 type = gets.chomp
-while (type != "json" && type != "curl") ##try an if/else here
+while (type != "json" && type != "curl" && type != "send") ##try an if/else here
   puts "Invalid input, please only enter 'json' for a JSON payload or 'curl' for a formatted cURL call: "
   type = gets.chomp
 end
@@ -161,4 +168,19 @@ if (type == "json")
   if(copy =="y")
     pbcopy(payload)
   end
+end
+
+if (type == "send")
+  puts "Enter API key: "
+  token = gets.chomp
+  puts "attempting to send message.."
+  response = HTTParty.post(
+      'https://api.sendgrid.com/v3/mail/send', 
+      body: payload,
+      headers: {
+        "Authorization" => "Bearer #{token}",
+        "Content-Type" => "application/json"
+      }
+    )
+  puts response
 end
