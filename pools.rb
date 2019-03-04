@@ -42,10 +42,7 @@ input["pools"].each { |pool| @pool_array << OpenStruct.new(pool) }
 	response = HTTParty.post(create_pool_uri, body: payload, headers: {"Authorization" => "token #{token}", "Content-Type" => "application/json"})
 	# response code
 	response_code = response.code.to_s
-	if !(response_code == "200")
-		puts "Error creating pool: "
-		puts "'#{response_code}' - #{response}"
-	end 
+	puts "'#{response_code}' - #{response}"
 	# add IPs to pool
 	
 	pool["ips"].each do |ips|
@@ -54,9 +51,7 @@ input["pools"].each { |pool| @pool_array << OpenStruct.new(pool) }
 		response = HTTParty.post(add_ip_uri, body: payload, headers: {"Authorization" => "token #{token}", "Content-Type" => "application/json"})
 		# response code
 		response_code = response.code.to_s
-		if !(response_code == "200")
-			puts "Error adding IP to pool #{pool.name}: "
-			puts "'#{response_code}' - #{response}"
-		end 
+		puts "'#{response_code}' - #{response}"
+
 	end
 end
