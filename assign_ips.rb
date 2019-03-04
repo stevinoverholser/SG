@@ -1,4 +1,4 @@
-# Create pools and add IPs on user
+# Assign IPs to subusers
 
 #expects ARGV[0] of input file:
 #EXAMPLE:
