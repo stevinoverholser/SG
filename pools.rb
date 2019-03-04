@@ -4,7 +4,7 @@
 #EXAMPLE:
 =begin e
 {
- "token" : "MAKO"	
+ "token" : "MAKO",	
  "pools": [
     {
       "name": "HIGH",
