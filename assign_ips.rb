@@ -1,5 +1,5 @@
 # Assign IPs to subusers
-
+# NOTE!!! - this is a PUT call and you need to define EVERY IP you want assigned to a subusers. Any already assigned ips not provided in input JSON will be removed
 #expects ARGV[0] of input file:
 #EXAMPLE:
 =begin 
