@@ -308,12 +308,20 @@ while (i < input["records"].count) do
 	if (create_link == "true" || create_link == "false")
 		if (default_link == "true" || default_link == "false")
 			if (create_link == "true")
-				link_payload = "#{link_payload}, \"default\": #{default_link}}"
-				puts "Creating Link Branding for '#{link_subdomain}.#{domain}'"
-				response = HTTParty.post("https://api.sendgrid.com/v3/whitelabel/links", body: link_payload, headers: {"Authorization" => "token #{token}", "Content-Type" => "application/json"})
-
-				response_json = JSON.parse(response.to_s)
+				if (parent_flag == true)
+					link_payload = "#{link_payload}, \"default\": #{default_link}}"
+					puts "Creating Link Branding for '#{link_subdomain}.#{domain}'"
+					response = HTTParty.post("https://api.sendgrid.com/v3/whitelabel/links", body: link_payload, headers: {"Authorization" => "token #{token}", "Content-Type" => "application/json"})
+					response_json = JSON.parse(response.to_s)
+				end				
+				if (parent_flag == false)
+					link_payload = "#{link_payload}, \"default\": #{default_link}}"
+					puts "Creating Link Branding for '#{link_subdomain}.#{domain}'"
+					response = HTTParty.post("https://api.sendgrid.com/v3/whitelabel/links", body: link_payload, headers: {"Authorization" => "token #{token}", "Content-Type" => "application/json", "on-behalf-of" => "#{username}"})
+					response_json = JSON.parse(response.to_s)
+				end
 				###CAPTURE DNS RECORDS###
+
 				if (response.code == 201)
 					puts "Success"						
 					link_type1 = response_json["dns"]["domain_cname"]["type"]
