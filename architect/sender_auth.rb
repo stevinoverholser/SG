@@ -137,7 +137,7 @@ while (i < input["records"].count) do
 	assign_to_sub_flag = false
 	parent_flag = false
 	# Check if user name is parent username
-
+	sleep(5)
 	response = HTTParty.get("https://api.sendgrid.com/v3/user/username", headers: {"Authorization" => "token #{token}", "Content-Type" => "application/json"})
 	response_code = response.code.to_s
 	if !(response_code == "200")
@@ -164,6 +164,7 @@ while (i < input["records"].count) do
 						if (parent_flag == true)
 							if (assign_domain_to_subuser == "false")
 								puts "Creating Domain Authentication for '#{domain_subdomain}.#{domain}' on user '#{username}'"
+								sleep(5)
 								response = HTTParty.post("https://api.sendgrid.com/v3/whitelabel/domains", body: domain_payload, headers: {"Authorization" => "token #{token}", "Content-Type" => "application/json"})
 								#puts domain_payload
 								#puts username
@@ -202,6 +203,7 @@ while (i < input["records"].count) do
 								#puts domain_payload
 							else
 								puts "Creating Domain Authentication for '#{domain_subdomain}.#{domain}' on user '#{username}' and assigning to '#{assign_domain_to_subuser}'"
+								sleep(5)
 								response = HTTParty.post("https://api.sendgrid.com/v3/whitelabel/domains", body: domain_payload, headers: {"Authorization" => "token #{token}", "Content-Type" => "application/json"})
 				
 								response_json = JSON.parse(response.to_s)
@@ -238,6 +240,7 @@ while (i < input["records"].count) do
 										domain_id = response_json["id"]
 									end
 									puts "Assigning Domain Authentication for '#{domain_subdomain}.#{domain}' to subuser '#{assign_domain_to_subuser}'"
+									sleep(5)
 									response = HTTParty.post("https://api.sendgrid.com/v3/whitelabel/domains/#{domain_id}/subuser", body: "{\"username\": \"#{assign_domain_to_subuser}\"}", headers: {"Authorization" => "token #{token}", "Content-Type" => "application/json"})
 									response_json = JSON.parse(response.to_s)
 									## CONFIRM ASSIGNED##
@@ -254,6 +257,7 @@ while (i < input["records"].count) do
 						end
 						if (parent_flag == false)
 							puts "Creating Domain Authentication for '#{domain_subdomain}.#{domain}' on user '#{username}'"
+							sleep(5)
 							response = HTTParty.post("https://api.sendgrid.com/v3/whitelabel/domains", body: domain_payload, headers: {"Authorization" => "token #{token}", "Content-Type" => "application/json", "on-behalf-of" => "#{username}"})
 							#puts domain_payload
 							#puts username
@@ -311,12 +315,14 @@ while (i < input["records"].count) do
 				if (parent_flag == true)
 					link_payload = "#{link_payload}, \"default\": #{default_link}}"
 					puts "Creating Link Branding for '#{link_subdomain}.#{domain}'"
+					sleep(5)
 					response = HTTParty.post("https://api.sendgrid.com/v3/whitelabel/links", body: link_payload, headers: {"Authorization" => "token #{token}", "Content-Type" => "application/json"})
 					response_json = JSON.parse(response.to_s)
 				end				
 				if (parent_flag == false)
 					link_payload = "#{link_payload}, \"default\": #{default_link}}"
 					puts "Creating Link Branding for '#{link_subdomain}.#{domain}'"
+					sleep(5)
 					response = HTTParty.post("https://api.sendgrid.com/v3/whitelabel/links", body: link_payload, headers: {"Authorization" => "token #{token}", "Content-Type" => "application/json", "on-behalf-of" => "#{username}"})
 					response_json = JSON.parse(response.to_s)
 				end
@@ -342,6 +348,7 @@ while (i < input["records"].count) do
 				end
 				if !(assign_to_sub_flag == false)
 					puts "Assigning Link Branding for '#{link_subdomain}.#{domain}' to subuser '#{assign_link_to_subuser}'"
+					sleep(5)
 					response = HTTParty.post("https://api.sendgrid.com/v3/whitelabel/links/#{link_id}/subuser", body: "{\"username\": \"#{assign_link_to_subuser}\"}", headers: {"Authorization" => "token #{token}", "Content-Type" => "application/json"})
 					response_json = JSON.parse(response.to_s)
 					## CONFIRM ASSIGNED##
@@ -366,6 +373,7 @@ while (i < input["records"].count) do
 		if (create_rdns == "true")
 			puts "Creating rDNS for '#{rdns_subdomain}.#{domain}' on '#{ip}'"
 			rdns_payload = "{\"ip\": \"#{ip}\", \"subdomain\": \"#{rdns_subdomain}\", \"domain\": \"#{domain}\"}"
+			sleep(5)
 			response = HTTParty.post("https://api.sendgrid.com/v3/whitelabel/ips", body: rdns_payload, headers: {"Authorization" => "token #{token}", "Content-Type" => "application/json"})
 			response_json = JSON.parse(response.to_s)
 			###CAPTURE DNS RECORDS###
