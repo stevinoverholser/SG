@@ -51,6 +51,10 @@ input["pools"].each { |pool| @pool_array << OpenStruct.new(pool) }
 		response = HTTParty.post(add_ip_uri, body: payload, headers: {"Authorization" => "token #{token}", "Content-Type" => "application/json"})
 		# response code
 		response_code = response.code.to_s
+		if response.headers['x-ratelimit-remaining'] == "0"
+	       puts "hitting rate limit, sleeping for a few seconds, until #{response.headers['x-ratelimit-reset']}"
+	       sleep(1) until Time.now.to_i >= response.headers['x-ratelimit-reset'].to_i
+	    end
 		puts "'#{response_code}' - #{response}"
 
 	end
