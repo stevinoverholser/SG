@@ -6,8 +6,8 @@ Download 'COPY AS JSON' bundle for Sequel Pro (https://sequelpro.com/docs/bundle
 Run Query:
 
 	select name, 
-	replace(replace(replace(replace(replace(html_content,"/","\\\/" ), "\t", "\\t"), "\r", "\\r"),"\n","\\n"),CHAR(3),"") as "html_content",
-	replace(replace(replace(replace(replace(plain_content,"/","\\\/" ), "\t", "\\t"), "\r", "\\r"),"\n","\\n"),CHAR(3),"")  as "plain_content", 
+	replace(replace(replace(replace(replace(replace(replace(html_content,"/","\\\/" ), "\t", "\\t"), "\r", "\\r"),"\n","\\n"),CHAR(3),""),"%]","}}"),"[%","{{") as "html_content",
+	replace(replace(replace(replace(replace(replace(replace(plain_content,"/","\\\/" ), "\t", "\\t"), "\r", "\\r"),"\n","\\n"),CHAR(3),""),"%]","}}"),"[%","{{")  as "plain_content", 
 	case when editor_id = 1 then "design" else "code" end as "editor"
 	from marketing_template where user_id={UID}
 
