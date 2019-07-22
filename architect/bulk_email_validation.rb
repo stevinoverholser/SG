@@ -30,8 +30,11 @@ puts "Total email addresses: #{size}"
 token = "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"
 i = 0
 mod = size / 100
-mod = mod.ceil
+mod = mod.floor
 percent = 0
+valid_count = 0
+risky_count = 0
+invalid_count = 0
 while (i < size) do
 	payload = "{\"email\": \"#{email_array[i]}\"}"
 	response1 = HTTParty.post("https://api.sendgrid.com/v3/validations/email", body: payload, headers: {"Authorization" => "Bearer #{token}", "Content-Type" => "application/json"})
@@ -55,10 +58,27 @@ while (i < size) do
 	#puts "#{i}"
 	if (i % mod == 0)
 		puts "#{percent}\% complete"
-		percent = percent + 1
+		percent =  ((i.to_f  / size.to_f) * 100.00).floor
 	end
+	if (verdict[i] == "Valid")
+		valid_count = valid_count + 1
+	elsif (verdict[i] == "Risky")
+		risky_count = risky_count + 1	
+	elsif (verdict[i] == "Invalid")
+		invalid_count = invalid_count + 1
+	end
+		
 	i = i + 1
 end
+puts "#{valid_count} / #{risky_count}/ #{invalid_count}"
+valid_rate = ((valid_count.to_f / size.to_f) * 100).floor
+risky_rate = ((risky_count.to_f / size.to_f) * 100).floor
+invalid_rate = ((invalid_count.to_f / size.to_f) * 100).floor
+
+puts "#{valid_rate}\% of emails returned 'Valid'"
+puts "#{risky_rate}\% of emails returned 'Risky'"
+puts "#{invalid_rate}\% of emails returned 'Invalid'"
+
 puts "Writing results to a CSV..."
 CSV.open("test_results.csv", "w")
 		CSV.open("test_results.csv", "ab") do |csv| 
@@ -70,5 +90,6 @@ CSV.open("test_results.csv", "ab") do |csv|
         csv << row
     end
 end
+
 #csv_write("test_results.csv", email_array.flatten, "email")
 puts "Valid emails written to 'test_results.csv'"
