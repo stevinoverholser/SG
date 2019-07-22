@@ -27,8 +27,11 @@ end
 size = email_array.length
 puts "Total email addresses: #{size}"
 ##
-token = "VALIDATION_SPECIFIC_API_KEY"
+token = "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"
 i = 0
+mod = size / 100
+mod = mod.ceil
+percent = 0
 while (i < size) do
 	payload = "{\"email\": \"#{email_array[i]}\"}"
 	response1 = HTTParty.post("https://api.sendgrid.com/v3/validations/email", body: payload, headers: {"Authorization" => "Bearer #{token}", "Content-Type" => "application/json"})
@@ -49,20 +52,23 @@ while (i < size) do
 		suggestion[i] = response1["result"]["suggestion"]
 		checks[i] = response1["result"]["checks"].to_s
 	end
-	##############
-	if (i == 0)
-		CSV.open("test_results.csv", "w")
+	#puts "#{i}"
+	if (i % mod == 0)
+		puts "#{percent}\% complete"
+		percent = percent + 1
+	end
+	i = i + 1
+end
+puts "Writing results to a CSV..."
+CSV.open("test_results.csv", "w")
 		CSV.open("test_results.csv", "ab") do |csv| 
 		csv << ["email", "verdict", "score", "local", "host", "suggestion" ,"checks"]
 		end
-	end
-	#mail stream
-	CSV.open("test_results.csv", "ab") do |csv| 
-	csv << [email[i], verdict[i], score[i], local[i], host[i], suggestion[i], checks[i]]
-	end
-	##############
-	i = i + 1
+table = [email, verdict, score, local, host, suggestion, checks].transpose
+CSV.open("test_results.csv", "ab") do |csv|
+    table.each do |row|
+        csv << row
+    end
 end
-
 #csv_write("test_results.csv", email_array.flatten, "email")
 puts "Valid emails written to 'test_results.csv'"
