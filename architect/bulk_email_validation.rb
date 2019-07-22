@@ -27,7 +27,7 @@ end
 size = email_array.length
 puts "Total email addresses: #{size}"
 ##
-token = "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"
+token = "{API_KEY}"
 i = 0
 mod = size / 100
 mod = mod.floor
