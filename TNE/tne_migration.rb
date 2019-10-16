@@ -61,7 +61,7 @@ while (h < custom_fields["custom_fields"].count) do
 	custom_fields["custom_fields"][h].delete("id")
 	puts "Migrating Custom Field '#{custom_fields["custom_fields"][h]["name"]}'"
 	payload = "{\"name\": \"#{custom_fields["custom_fields"][h]["name"]}\", \"field_type\": \"#{custom_fields["custom_fields"][h]["type"].capitalize}\"}"
-	#puts payload
+	##puts payload
 	response0 = HTTParty.post("https://api.sendgrid.com/v3/marketing/field_definitions", body: payload, headers: {"Authorization" => "Bearer #{token}", "Content-Type" => "application/json"})
 	if response0.headers['x-ratelimit-remaining'] == "0"
 	    puts "hitting rate limit, sleeping for a few seconds"
@@ -207,7 +207,8 @@ while (i < response["lists"].count) do
 			if (no_put_flag > 0)
 				puts "Making PUT call adding recipient, #{r_count} out of #{response2["recipient_count"]} recipients"
 				response3 = HTTParty.put("https://api.sendgrid.com/v3/marketing/contacts", body: payload, headers: {"Authorization" => "Bearer #{token}", "Content-Type" => "application/json"})
-				#puts payload
+				#puts response3
+				#puts response3.code.to_s
 				puts "Completed PUT call"
 				if response3.headers['x-ratelimit-remaining'] == "0"
 				    puts "hitting rate limit, sleeping for a few seconds"
@@ -215,7 +216,8 @@ while (i < response["lists"].count) do
 				    response3 = HTTParty.put("https://api.sendgrid.com/v3/marketing/contacts", body: payload, headers: {"Authorization" => "Bearer #{token}", "Content-Type" => "application/json"})
 				end
 				if (response3.code.to_s != "202")
-					puts "Error uploading recipients on list #{response["lists"][i]["name"]}' recipient: '#{response3["recipients"][j]["email"]}' | ERROR: #{response3.code} - #{response3}"
+					#puts "Error uploading recipients on list #{response["lists"][i]["name"]}' recipient: '#{response3["recipients"][j]["email"]}' | ERROR: #{response3.code} - #{response3}"
+					puts "Error uploading recipients on list #{response["lists"][i]["name"]}' | ERROR: #{response3.code} - #{response3}"
 					#break if (response2.code.to_s != "200" && response2.code.to_s != "404")
 				end
 			end
@@ -230,6 +232,8 @@ end
 
 to_up = all.reject{|x| list.include? x}
 #puts "NOT ON LIST = #{to_up.count}"
+#puts to_up
+#puts to_up.count
 if (to_up.count == 0)
 	all_on_list = true
 end
@@ -249,7 +253,7 @@ if (!all_on_list)
 	k = 0
 	while (k <= count.ceil) do
 		payload = to_up.pop(1000).to_s
-		#puts payload
+		##puts payload
 		#puts "https://api.sendgrid.com/v3/contactdb/lists/#{list_response["id"]}/recipients"
 		response4 = HTTParty.post("https://api.sendgrid.com/v3/contactdb/lists/#{list_response["id"]}/recipients", body: payload, headers: {"Authorization" => "Bearer #{token}", "Content-Type" => "application/json"})
 		if response4.headers['x-ratelimit-remaining'] == "0"
@@ -259,7 +263,7 @@ if (!all_on_list)
 		end
 		if (response4.code.to_s != "201")
 			puts "Error uploading recipients on list 'Recipients on no list' | ERROR: #{response4.code} - #{response4}"
-			puts payload
+			##puts payload
 			#break if (response2.code.to_s != "200" && response2.code.to_s != "404")
 		end
 		k = k + 1
@@ -314,6 +318,7 @@ if (!all_on_list)
 					response5 = HTTParty.get("https://api.sendgrid.com/v3/contactdb/lists/#{list_response["id"]}/recipients?page=#{page}&page_size=#{page_size}", headers: {"Authorization" => "Bearer #{token}", "Content-Type" => "application/json"})
 				end
 			end
+=begin
 			while ((1000 - response5["recipients"].count) > 200) do
 				response5 = HTTParty.get("https://api.sendgrid.com/v3/contactdb/lists/#{list_response["id"]}/recipients?page=#{page}&page_size=#{page_size}", headers: {"Authorization" => "Bearer #{token}", "Content-Type" => "application/json"})
 				if response5.headers["x-ratelimit-remaining"] == "0"
@@ -328,6 +333,7 @@ if (!all_on_list)
 				puts "Sleeping for 15 seconds for DB lag | page size too small at #{response5["recipients"].count}"
 				sleep(15)
 			end
+=end
 			j = 0
 			r_count = r_count + response5["recipients"].count
 			#puts response5["recipients"].count
@@ -389,7 +395,7 @@ if (!all_on_list)
 				end
 				payload = "{\"contacts\": [#{contacts_final}}]}"
 				#payload = "{ \"list_ids\": [\"#{response1["id"]}\"], \"contacts\": [#{recip_list} #{new_c_f_string}}]}"
-				#puts payload
+				##puts payload
 				j = j + 1
 			end
 			#################### add batched put calls
