@@ -1,7 +1,7 @@
 # tne_migration.rb
 # All TNE contact list names can not be the same as legacy names
 # All TNE Custom Field names can not be the same as legacy names
-# Legacy list can not have a noe exactly "Recipients on no list" 
+# Legacy list can not have a no exactly "Recipients on no list" 
 require 'httparty'
 require 'json'
 require 'time'
@@ -20,6 +20,7 @@ all = []
 list = []
 
 # Get all contacts on legacy ALL CONTACTS
+
 more_pages = true
 puts "Creating list of all contacts not on a list. This may take a few minutes"
 while (more_pages) do
@@ -54,25 +55,30 @@ puts "All contacts number = #{all.count}"
 
 ##############
 puts "Migrating Custom Fields"
+
 custom_fields = HTTParty.get("https://api.sendgrid.com/v3/contactdb/custom_fields", headers: {"Authorization" => "Bearer #{token}", "Content-Type" => "application/json"})
 tne_custom_fields = [[]]
 h = 0
 while (h < custom_fields["custom_fields"].count) do 
-	custom_fields["custom_fields"][h].delete("id")
-	puts "Migrating Custom Field '#{custom_fields["custom_fields"][h]["name"]}'"
-	payload = "{\"name\": \"#{custom_fields["custom_fields"][h]["name"]}\", \"field_type\": \"#{custom_fields["custom_fields"][h]["type"].capitalize}\"}"
-	##puts payload
-	response0 = HTTParty.post("https://api.sendgrid.com/v3/marketing/field_definitions", body: payload, headers: {"Authorization" => "Bearer #{token}", "Content-Type" => "application/json"})
-	if response0.headers['x-ratelimit-remaining'] == "0"
-	    puts "hitting rate limit, sleeping for a few seconds"
-	    sleep(1) until Time.now.to_i >= response0.headers['x-ratelimit-reset'].to_i
-	    response0 = HTTParty.post("https://api.sendgrid.com/v3/marketing/field_definitions", body: payload, headers: {"Authorization" => "Bearer #{token}", "Content-Type" => "application/json"})
-	end
-	#puts response0
-	tne_custom_fields.push([response0["id"],response0["name"],response0["field_type"]])
-	#puts tne_custom_fields
-	h = h + 1
+	
+		custom_fields["custom_fields"][h].delete("id")
+		puts "Migrating Custom Field '#{custom_fields["custom_fields"][h]["name"]}'"
+		payload = "{\"name\": \"#{custom_fields["custom_fields"][h]["name"]}\", \"field_type\": \"#{custom_fields["custom_fields"][h]["type"].capitalize}\"}"
+		##puts payload
+		response0 = HTTParty.post("https://api.sendgrid.com/v3/marketing/field_definitions", body: payload, headers: {"Authorization" => "Bearer #{token}", "Content-Type" => "application/json"})
+		if response0.headers['x-ratelimit-remaining'] == "0"
+		    puts "hitting rate limit, sleeping for a few seconds"
+		    sleep(1) until Time.now.to_i >= response0.headers['x-ratelimit-reset'].to_i
+		    response0 = HTTParty.post("https://api.sendgrid.com/v3/marketing/field_definitions", body: payload, headers: {"Authorization" => "Bearer #{token}", "Content-Type" => "application/json"})
+		end
+		#puts response0
+		if (response0.code.to_s == "200")
+			tne_custom_fields.push([response0["id"],response0["name"],response0["field_type"]])
+		end
+		#puts tne_custom_fields
+		h = h + 1
 end
+
 # Get all old list names to recreate
 response = HTTParty.get("https://api.sendgrid.com/v3/contactdb/lists", headers: {"Authorization" => "Bearer #{token}", "Content-Type" => "application/json"})
 if response.headers['x-ratelimit-remaining'] == "0"
@@ -85,7 +91,10 @@ if (response.code.to_s != "200")
 end
 
 # Itterate through all lists
-
+CSV.open("-ERROR.csv", "w")
+CSV.open("-ERROR.csv", "ab") do |csv| 
+	csv << ["Error Code", "Error Reason", "Payload"]
+end
 i = 0
 ##############
 
@@ -112,7 +121,7 @@ while (i < response["lists"].count) do
 	#puts "new listid = #{listID}"
 	#puts " meta data? = #{response1["_metadata"]["self"]}"
 
-
+	
 	####################
 	# Get contacts on this list
 	page = 1
@@ -172,8 +181,59 @@ while (i < response["lists"].count) do
 						end 
 						y = y + 1
 					end
+					#puts old_c_f[x]["name"].to_s
+					if (old_c_f[x]["name"].to_s == "alternate_emails" && old_c_f[x]["value"] != nil)
+							response2["recipients"][j].merge!({"alternate_emails" => ["#{old_c_f[x]["value"]}"]})
+							#puts response2["recipients"][j]
+					end
+					if (old_c_f[x]["name"].to_s == "address_line_1" && old_c_f[x]["value"] != nil)
+							response2["recipients"][j].merge!({"address_line_1" => "#{old_c_f[x]["value"]}"})
+							#puts response2["recipients"][j]
+					end
+					if (old_c_f[x]["name"].to_s == "address_line_2" && old_c_f[x]["value"] != nil)
+							response2["recipients"][j].merge!({"address_line_2" => "#{old_c_f[x]["value"]}"})
+							#puts response2["recipients"][j]
+					end
+					if (old_c_f[x]["name"].to_s == "city" && old_c_f[x]["value"] != nil)
+							response2["recipients"][j].merge!({"city" => "#{old_c_f[x]["value"]}"})
+							#puts response2["recipients"][j]
+					end
+					if (old_c_f[x]["name"].to_s == "state_province_region" && old_c_f[x]["value"] != nil)
+							response2["recipients"][j].merge!({"state_province_region" => "#{old_c_f[x]["value"]}"})
+							#puts response2["recipients"][j]
+					end
+					if (old_c_f[x]["name"].to_s == "postal_code" && old_c_f[x]["value"] != nil)
+							response2["recipients"][j].merge!({"postal_code" => "#{old_c_f[x]["value"]}"})
+							#puts response2["recipients"][j]
+					end
+					if (old_c_f[x]["name"].to_s == "country" && old_c_f[x]["value"] != nil)
+							response2["recipients"][j].merge!({"country" => "#{old_c_f[x]["value"]}"})
+							#puts response2["recipients"][j]
+					end
+					if (old_c_f[x]["name"].to_s == "phone_number" && old_c_f[x]["value"] != nil)
+							response2["recipients"][j].merge!({"phone_number" => "#{old_c_f[x]["value"]}"})
+							#puts response2["recipients"][j]
+					end
+					if (old_c_f[x]["name"].to_s == "whatsapp" && old_c_f[x]["value"] != nil)
+							response2["recipients"][j].merge!({"whatsapp" => "#{old_c_f[x]["value"]}"})
+							#puts response2["recipients"][j]
+					end
+					if (old_c_f[x]["name"].to_s == "facebook" && old_c_f[x]["value"] != nil)
+							response2["recipients"][j].merge!({"facebook" => "#{old_c_f[x]["value"]}"})
+							#puts response2["recipients"][j]
+					end
+					if (old_c_f[x]["name"].to_s == "line" && old_c_f[x]["value"] != nil)
+							response2["recipients"][j].merge!({"line" => "#{old_c_f[x]["value"]}"})
+							#puts response2["recipients"][j]
+					end
+					if (old_c_f[x]["name"].to_s == "unique_name" && old_c_f[x]["value"] != nil)
+							response2["recipients"][j].merge!({"unique_name" => "#{old_c_f[x]["value"]}"})
+							#puts response2["recipients"][j]
+					end
+					
 					x = x + 1
 				end
+				new_c_f.delete(nil)
 				new_c_f_string = new_c_f.to_s
 				#puts new_c_f_string
 				new_c_f_string[0] = "\"custom_fields\" : {"
@@ -206,6 +266,8 @@ while (i < response["lists"].count) do
 			#################### add batched put calls
 			if (no_put_flag > 0)
 				puts "Making PUT call adding recipient, #{r_count} out of #{response2["recipient_count"]} recipients"
+				#puts "****************PAYLOAD******************"
+				#puts payload
 				response3 = HTTParty.put("https://api.sendgrid.com/v3/marketing/contacts", body: payload, headers: {"Authorization" => "Bearer #{token}", "Content-Type" => "application/json"})
 				#puts response3
 				#puts response3.code.to_s
@@ -218,7 +280,11 @@ while (i < response["lists"].count) do
 				if (response3.code.to_s != "202")
 					#puts "Error uploading recipients on list #{response["lists"][i]["name"]}' recipient: '#{response3["recipients"][j]["email"]}' | ERROR: #{response3.code} - #{response3}"
 					puts "Error uploading recipients on list #{response["lists"][i]["name"]}' | ERROR: #{response3.code} - #{response3}"
+					puts "Writing to CSV - \"-ERROR.csv\""
 					#break if (response2.code.to_s != "200" && response2.code.to_s != "404")
+					CSV.open("-ERROR.csv", "ab") do |csv| 
+	  				csv << ["#{response3.code}", "#{response3}", "#{payload}"]
+	  				end
 				end
 			end
 			page = page + 1
@@ -367,8 +433,63 @@ if (!all_on_list)
 						end 
 							y = y + 1
 					end
+
+					if (old_c_f[x]["name"].to_s == "alternate_emails" && old_c_f[x]["value"] != nil)
+							response2["recipients"][j].merge!({"alternate_emails" => ["#{old_c_f[x]["value"]}"]})
+							#puts response2["recipients"][j]
+					end
+					if (old_c_f[x]["name"].to_s == "address_line_1" && old_c_f[x]["value"] != nil)
+							response2["recipients"][j].merge!({"address_line_1" => "#{old_c_f[x]["value"]}"})
+							#puts response2["recipients"][j]
+					end
+					if (old_c_f[x]["name"].to_s == "address_line_2" && old_c_f[x]["value"] != nil)
+							response2["recipients"][j].merge!({"address_line_2" => "#{old_c_f[x]["value"]}"})
+							#puts response2["recipients"][j]
+					end
+					if (old_c_f[x]["name"].to_s == "city" && old_c_f[x]["value"] != nil)
+							response2["recipients"][j].merge!({"city" => "#{old_c_f[x]["value"]}"})
+							#puts response2["recipients"][j]
+					end
+					if (old_c_f[x]["name"].to_s == "state_province_region" && old_c_f[x]["value"] != nil)
+							response2["recipients"][j].merge!({"state_province_region" => "#{old_c_f[x]["value"]}"})
+							#puts response2["recipients"][j]
+					end
+					if (old_c_f[x]["name"].to_s == "postal_code" && old_c_f[x]["value"] != nil)
+							response2["recipients"][j].merge!({"postal_code" => "#{old_c_f[x]["value"]}"})
+							#puts response2["recipients"][j]
+					end
+					if (old_c_f[x]["name"].to_s == "country" && old_c_f[x]["value"] != nil)
+							response2["recipients"][j].merge!({"country" => "#{old_c_f[x]["value"]}"})
+							#puts response2["recipients"][j]
+					end
+					if (old_c_f[x]["name"].to_s == "phone_number" && old_c_f[x]["value"] != nil)
+							response2["recipients"][j].merge!({"phone_number" => "#{old_c_f[x]["value"]}"})
+							#puts response2["recipients"][j]
+					end
+					if (old_c_f[x]["name"].to_s == "whatsapp" && old_c_f[x]["value"] != nil)
+							response2["recipients"][j].merge!({"whatsapp" => "#{old_c_f[x]["value"]}"})
+							#puts response2["recipients"][j]
+					end
+					if (old_c_f[x]["name"].to_s == "facebook" && old_c_f[x]["value"] != nil)
+							response2["recipients"][j].merge!({"facebook" => "#{old_c_f[x]["value"]}"})
+							#puts response2["recipients"][j]
+					end
+					if (old_c_f[x]["name"].to_s == "line" && old_c_f[x]["value"] != nil)
+							response2["recipients"][j].merge!({"line" => "#{old_c_f[x]["value"]}"})
+							#puts response2["recipients"][j]
+					end
+					if (old_c_f[x]["name"].to_s == "unique_name" && old_c_f[x]["value"] != nil)
+							response2["recipients"][j].merge!({"unique_name" => "#{old_c_f[x]["value"]}"})
+							#puts response2["recipients"][j]
+					end
+
 					x = x + 1
 				end
+
+
+				### ADD PREV CF HANDELING ###
+
+				new_c_f.delete(nil)
 				new_c_f_string = new_c_f.to_s
 				#puts new_c_f_string
 				new_c_f_string[0] = "\"custom_fields\" : {"
@@ -411,6 +532,11 @@ if (!all_on_list)
 			if (response6.code.to_s != "202")
 				puts "Error uploading recipients on list '#{list_response["name"]}' | ERROR: #{response6.code} - #{response6}"
 				#break if (response5.code.to_s != "200" && response5.code.to_s != "404")
+				puts "Writing to CSV - \"-ERROR.csv\""
+					#break if (response2.code.to_s != "200" && response2.code.to_s != "404")
+					CSV.open("-ERROR.csv", "ab") do |csv| 
+	  				csv << ["#{response6.code}", "#{response6}", "#{payload}"]
+	  				end
 			end
 			#puts page
 			#puts "#{response5.code} - #{response5["recipients"].count} - https://api.sendgrid.com/v3/contactdb/lists/#{list_response["id"]}/recipients?page=#{page}&page_size=#{page_size}"
