@@ -2,6 +2,8 @@
 # All TNE contact list names can not be the same as legacy names
 # All TNE Custom Field names can not be the same as legacy names
 # Legacy list can not have a no exactly "Recipients on no list" 
+#--
+# Writes to error txt file (-ERROR.txt)
 require 'httparty'
 require 'json'
 require 'time'
@@ -13,7 +15,7 @@ token = gets.chomp
 # Migrate Custom Fields
 page = 1
 page_size = 1000
-
+error_count = 0
 # Handle contacts not on a list
 
 all = []
@@ -91,10 +93,7 @@ if (response.code.to_s != "200")
 end
 
 # Itterate through all lists
-CSV.open("-ERROR.csv", "w")
-CSV.open("-ERROR.csv", "ab") do |csv| 
-	csv << ["Error Code", "Error Reason", "Payload"]
-end
+File.open("-ERROR.txt", "w")
 i = 0
 ##############
 
@@ -280,10 +279,11 @@ while (i < response["lists"].count) do
 				if (response3.code.to_s != "202")
 					#puts "Error uploading recipients on list #{response["lists"][i]["name"]}' recipient: '#{response3["recipients"][j]["email"]}' | ERROR: #{response3.code} - #{response3}"
 					puts "Error uploading recipients on list #{response["lists"][i]["name"]}' | ERROR: #{response3.code} - #{response3}"
-					puts "Writing to CSV - \"-ERROR.csv\""
+					puts "Writing to error log - \"-ERROR.txt\""
+					error_count = error_count + 1
 					#break if (response2.code.to_s != "200" && response2.code.to_s != "404")
-					CSV.open("-ERROR.csv", "ab") do |csv| 
-	  				csv << ["#{response3.code}", "#{response3}", "#{payload}"]
+					File.open("-ERROR.txt", "a") do |fo| 
+	  				fo.puts "#{response3.code} \n#{response3}\n #{payload}\n**************\n"
 	  				end
 				end
 			end
@@ -295,7 +295,7 @@ while (i < response["lists"].count) do
 		#puts "{ \"list_ids\": [\"list ids\"], \"contacts\": #{recip_list} #{new_c_f_string}}]}"
 	i = i + 1
 end
-
+puts "Finding recipients on no lists, this may take a few minutes..."
 to_up = all.reject{|x| list.include? x}
 #puts "NOT ON LIST = #{to_up.count}"
 #puts to_up
@@ -384,8 +384,11 @@ if (!all_on_list)
 					response5 = HTTParty.get("https://api.sendgrid.com/v3/contactdb/lists/#{list_response["id"]}/recipients?page=#{page}&page_size=#{page_size}", headers: {"Authorization" => "Bearer #{token}", "Content-Type" => "application/json"})
 				end
 			end
-=begin
-			while ((1000 - response5["recipients"].count) > 200) do
+			if ((page <= 1))
+				puts  "#{response5["recipient_count"]} = #{disp_count}. Sleeping for 30 additional seconds."
+				sleep(30)
+			end
+			while (((1000 - response5["recipients"].count) > 200) && (response5["recipient_count"] > 1001) && (page <= 1)) do
 				response5 = HTTParty.get("https://api.sendgrid.com/v3/contactdb/lists/#{list_response["id"]}/recipients?page=#{page}&page_size=#{page_size}", headers: {"Authorization" => "Bearer #{token}", "Content-Type" => "application/json"})
 				if response5.headers["x-ratelimit-remaining"] == "0"
 					puts "hitting rate limit, sleeping for a few seconds"
@@ -399,7 +402,7 @@ if (!all_on_list)
 				puts "Sleeping for 15 seconds for DB lag | page size too small at #{response5["recipients"].count}"
 				sleep(15)
 			end
-=end
+
 			j = 0
 			r_count = r_count + response5["recipients"].count
 			#puts response5["recipients"].count
@@ -532,11 +535,13 @@ if (!all_on_list)
 			if (response6.code.to_s != "202")
 				puts "Error uploading recipients on list '#{list_response["name"]}' | ERROR: #{response6.code} - #{response6}"
 				#break if (response5.code.to_s != "200" && response5.code.to_s != "404")
-				puts "Writing to CSV - \"-ERROR.csv\""
+				puts "Writing to error log - \"-ERROR.txt\""
+				error_count = error_count + 1
 					#break if (response2.code.to_s != "200" && response2.code.to_s != "404")
-					CSV.open("-ERROR.csv", "ab") do |csv| 
-	  				csv << ["#{response6.code}", "#{response6}", "#{payload}"]
+	  				File.open("-ERROR.txt", "a") do |fo| 
+	  				fo.puts "#{response6.code} \n#{response6}\n #{payload}\n**************\n"
 	  				end
+	  				
 			end
 			#puts page
 			#puts "#{response5.code} - #{response5["recipients"].count} - https://api.sendgrid.com/v3/contactdb/lists/#{list_response["id"]}/recipients?page=#{page}&page_size=#{page_size}"
@@ -547,4 +552,4 @@ if (!all_on_list)
 	end
 end
 ####
-puts "Script complete"
+puts "Script complete -- #{error_count} errors."
