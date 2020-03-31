@@ -5,7 +5,7 @@
 require 'httparty'
 require 'json'
 require 'csv'
-# csv_write() Adpated from https://github.com/sendgrid/support_scripts/blob/master/webapi_scripts/v3_unsub-delete.rb 
+
 @csv_perm = "a"
 def csv_write(csv_file, result_array, headers)
     CSV.open(csv_file, @csv_perm, {:force_quotes=>true}) { |csv| result_array.each { |result| csv << [result]}}
