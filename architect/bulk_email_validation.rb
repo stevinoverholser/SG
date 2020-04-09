@@ -1,4 +1,4 @@
-# Input a CSV of emails - outputs CSV with validation results
+# Input a CSV of emails - outputs CSV with validation results. Update {API_KEY} with Validation API key
 # ruby bulk_email_validation.rb filename.csv
 # 
 # file MUST be a proper CSV format, with a single first column, with "email" as only header row.
