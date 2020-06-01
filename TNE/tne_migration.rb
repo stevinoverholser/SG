@@ -2,8 +2,6 @@
 # All TNE contact list names can not be the same as legacy names
 # All TNE Custom Field names can not be the same as legacy names
 # Legacy list can not have a no exactly "Recipients on no list" 
-#--
-# Writes to error txt file (-ERROR.txt)
 require 'httparty'
 require 'json'
 require 'time'
@@ -13,6 +11,10 @@ require 'time'
 puts "Please enter API key: "
 token = gets.chomp
 # Migrate Custom Fields
+CSV.open("BAD_EMAILS.csv", "w")
+CSV.open("BAD_EMAILS.csv", "ab") do |csv| 
+	csv << ["email", "error_field", "error_message"] 
+end
 page = 1
 page_size = 1000
 error_count = 0
@@ -263,7 +265,10 @@ while (i < response["lists"].count) do
 				j = j + 1
 			end
 			#################### add batched put calls
-			if (no_put_flag > 0)
+
+				payload.gsub! "custom_fields\" : {,", "custom_fields\" : {"
+
+			if ((no_put_flag > 0) && (response2["recipients"].count > 0))
 				puts "Making PUT call adding recipient, #{r_count} out of #{response2["recipient_count"]} recipients"
 				#puts "****************PAYLOAD******************"
 				#puts payload
@@ -277,14 +282,54 @@ while (i < response["lists"].count) do
 				    response3 = HTTParty.put("https://api.sendgrid.com/v3/marketing/contacts", body: payload, headers: {"Authorization" => "Bearer #{token}", "Content-Type" => "application/json"})
 				end
 				if (response3.code.to_s != "202")
-					#puts "Error uploading recipients on list #{response["lists"][i]["name"]}' recipient: '#{response3["recipients"][j]["email"]}' | ERROR: #{response3.code} - #{response3}"
 					puts "Error uploading recipients on list #{response["lists"][i]["name"]}' | ERROR: #{response3.code} - #{response3}"
-					puts "Writing to error log - \"-ERROR.txt\""
-					error_count = error_count + 1
-					#break if (response2.code.to_s != "200" && response2.code.to_s != "404")
-					File.open("-ERROR.txt", "a") do |fo| 
-	  				fo.puts "#{response3.code} \n#{response3}\n #{payload}\n**************\n"
-	  				end
+					##
+					payload = JSON.parse(payload)
+					m = 0
+					contact_numbers = []
+					while (m < response3["errors"].count) do
+						if (/contacts\[\V*/ =~ response3["errors"][m]["field"])
+							contact_test = response3["errors"][m]["field"]
+							#puts contact_test
+							contact_numbers[m] = contact_test.scan(/\d+/).first.to_i
+							puts "Removing recipient '#{payload["contacts"][contact_numbers[m]]["email"]}' and adding to BAD_EMAILS.csv"
+							CSV.open("BAD_EMAILS.csv", "ab") do |csv| 
+									csv << [payload["contacts"][contact_numbers[m]]["email"], response3["errors"][m]["field"],response3["errors"][m]["message"]]
+							end
+							#puts payload["contacts"][contact_numbers[m]]
+						end
+						m = m + 1
+					end
+					if (contact_numbers.count > 0)
+						n = 0
+						while (n < contact_numbers.count) do
+							payload["contacts"].delete_at(contact_numbers[n] - n)
+							n = n + 1
+						end
+						if (payload["contacts"].count > 0)
+							puts "Retrying PUT call"
+							response_retry = HTTParty.put("https://api.sendgrid.com/v3/marketing/contacts", body: payload.to_json, headers: {"Authorization" => "Bearer #{token}", "Content-Type" => "application/json"})
+							puts "Completed PUT call"
+							##error handeling for retry
+							if (response_retry.code.to_s != "202")
+								puts "Error uploading recipients on retry | ERROR: #{response_retry.code} - #{response_retry}"
+								puts "Writing to error log - \"-ERROR.txt\""
+								error_count = error_count + 1
+								File.open("-ERROR.txt", "a") do |fo| 
+								  	fo.puts "#{response_retry.code} \n#{response_retry}\n #{payload.to_json}\n**************\n"
+								end
+							end
+						else
+							puts "All recipients in payload are invalid and written to 'BAD_EMAILS.csv'"
+						end
+					else
+						puts "Writing to error log - \"-ERROR.txt\""
+						error_count = error_count + 1
+						#break if (response2.code.to_s != "200" && response2.code.to_s != "404")
+						File.open("-ERROR.txt", "a") do |fo| 
+		  					fo.puts "#{response3.code} \n#{response3}\n #{payload.to_json}\n**************\n"
+		  				end
+		  			end
 				end
 			end
 			page = page + 1
@@ -296,7 +341,8 @@ while (i < response["lists"].count) do
 	i = i + 1
 end
 puts "Finding recipients on no lists, this may take a few minutes..."
-to_up = all.reject{|x| list.include? x}
+#to_up = all.reject{|x| list.include? x}
+to_up = all - list
 #puts "NOT ON LIST = #{to_up.count}"
 #puts to_up
 #puts to_up.count
@@ -534,14 +580,56 @@ if (!all_on_list)
 			end
 			if (response6.code.to_s != "202")
 				puts "Error uploading recipients on list '#{list_response["name"]}' | ERROR: #{response6.code} - #{response6}"
-				#break if (response5.code.to_s != "200" && response5.code.to_s != "404")
-				puts "Writing to error log - \"-ERROR.txt\""
-				error_count = error_count + 1
+				##
+				payload = JSON.parse(payload)
+				m = 0
+				contact_numbers = []
+				while (m < response6["errors"].count) do
+					if (/contacts\[\V*/ =~ response6["errors"][m]["field"])
+						contact_test = response6["errors"][m]["field"]
+						#puts contact_test
+						contact_numbers[m] = contact_test.scan(/\d+/).first.to_i
+						puts "Removing recipient '#{payload["contacts"][contact_numbers[m]]["email"]}' and adding to BAD_EMAILS.csv"
+						CSV.open("BAD_EMAILS.csv", "ab") do |csv| 
+								csv << [payload["contacts"][contact_numbers[m]]["email"],response6["errors"][m]["field"] ,response6["errors"][m]["message"]]
+						end
+						#puts payload["contacts"][contact_numbers[m]]
+					end
+					m = m + 1
+				end
+				if (contact_numbers.count > 0)
+					n = 0
+					while (n < contact_numbers.count) do
+						payload["contacts"].delete_at(contact_numbers[n] - n)
+						n = n + 1
+					end
+					#puts payload["contacts"]
+					#puts payload["contacts"].count 
+					if (payload["contacts"].count > 0)
+						puts "Retrying PUT call"
+						response_retry = HTTParty.put("https://api.sendgrid.com/v3/marketing/contacts", body: payload.to_json, headers: {"Authorization" => "Bearer #{token}", "Content-Type" => "application/json"})
+						puts "Completed PUT call"
+						##error handeling for retry
+						if (response_retry.code.to_s != "202")
+							puts "Error uploading recipients on retry | ERROR: #{response_retry.code} - #{response_retry}"
+							puts "Writing to error log - \"-ERROR.txt\""
+							error_count = error_count + 1
+							File.open("-ERROR.txt", "a") do |fo| 
+							  	fo.puts "#{response_retry.code} \n#{response_retry}\n #{payload.to_json}\n**************\n"
+							end
+						end
+					
+					else
+						puts "All recipients in payload are invalid and written to 'BAD_EMAILS.csv'"
+					end
+				else
+					puts "Writing to error log - \"-ERROR.txt\""
+					error_count = error_count + 1
 					#break if (response2.code.to_s != "200" && response2.code.to_s != "404")
-	  				File.open("-ERROR.txt", "a") do |fo| 
-	  				fo.puts "#{response6.code} \n#{response6}\n #{payload}\n**************\n"
-	  				end
-	  				
+		  			File.open("-ERROR.txt", "a") do |fo| 
+		  				fo.puts "#{response6.code} \n#{response6}\n #{payload.to_json}\n**************\n"
+		  			end
+	  			end
 			end
 			#puts page
 			#puts "#{response5.code} - #{response5["recipients"].count} - https://api.sendgrid.com/v3/contactdb/lists/#{list_response["id"]}/recipients?page=#{page}&page_size=#{page_size}"
