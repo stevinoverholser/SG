@@ -1,5 +1,5 @@
 # Assign IPs to subusers
-
+# PUT call overwrites all existing IPs
 #expects ARGV[0] of input file:
 #EXAMPLE:
 =begin 
