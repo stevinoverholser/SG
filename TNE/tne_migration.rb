@@ -1,7 +1,7 @@
 # tne_migration.rb
 # All TNE contact list names can not be the same as legacy names
 # All TNE Custom Field names can not be the same as legacy names
-# Legacy list can not have a no exactly "Recipients on no list" 
+# Legacy list can not have the name exactly "Recipients on no list" 
 require 'httparty'
 require 'json'
 require 'time'
